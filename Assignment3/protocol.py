@@ -23,8 +23,10 @@ class Protocol:
         self._key = None
         self.g = 5  # i am unsure about this value
         self.p = 23  # i am unsure about this value
+        self.secret = random.randint(1, self.p - 1)
         self.R = None
         self.hmac_key = get_random_bytes(16)
+        self.phase = 0
 
     # Creating the initial message of your protocol (to be send to the other party to bootstrap the protocol)
     # Nadia
@@ -38,22 +40,55 @@ class Protocol:
         """
         # Generate a random value R within the range (1, p-1) as the nonce
         self.R = random.randint(1, self.p - 1)
+        self.phase = 2
         return f"{self.g},{self.p},{self.R}"
 
 
     # Checking if a received message is part of your protocol (called from app.py)
     # Alex
-    # TODO: IMPLMENET THE LOGIC
+    # Assume there is no message loss, so we can assume that the first message is the initiation message
+    # Until the key is established, we can assume that all messages are part of the protocol
     def IsMessagePartOfProtocol(self, message):
-        return False
+        if self.key == None:
+            return True
+        else:
+            return False
 
 
     # Processing protocol message
     # Alex
+    # Server Phases: 
+    # 0: Recieved init from client. Encrypt R_client and g^b mod p with the shared key and self.R in the clear and send it to the client
+    # 1: Decrypt self.R, g^a mod p from client message. Verify self.R. Calculate g^ab mod p and set to key
+    # Client Phases:
+    # 2: Decrypt g^b mod p, and self.R from server message. Verify R_self. Encrypt R_server and g^a mod p with the shared key and send it to the server
+    #       Set key to g^ab mod p.
     # TODO: IMPLMENET THE LOGIC (CALL SetSessionKey ONCE YOU HAVE THE KEY ESTABLISHED)
     # THROW EXCEPTION IF AUTHENTICATION FAILS
     def ProcessReceivedProtocolMessage(self, message):
-        pass
+        try:
+            if self.phase == 0:
+                g, p, R = message.split(",")
+                self.g = int(g)
+                self.p = int(p)
+                self.R = random.randint(1, self.p - 1)
+                
+                self.phase += 1
+                return "Recieved initiation message"
+            if self.phase == 1:
+                # Implement Diffie-Hellman key exchange
+                return "Recieved key exchange message"
+            if self.phase == 2:
+                # Client phase 
+
+            else:
+                return "Error: Authentication failed"
+            
+
+        except ValueError:
+            print("Error: Integrity verification or authentication failed.")
+        else:
+            return plain_text
 
 
     # Setting the key for the current session
