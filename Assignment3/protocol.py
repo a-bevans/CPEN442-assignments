@@ -130,7 +130,8 @@ class Protocol:
     # Documentation: https://pycryptodome.readthedocs.io/en/latest/src/examples.html
     def EncryptAndProtectMessage(self, plain_text):
         if self._key is None:
-            
+            print("Encrypt: No key established.")
+            return plain_text
         try:
             plain_text_bytes = plain_text.encode()
             cipher = AES.new(self._key, AES.MODE_CTR)
@@ -154,7 +155,9 @@ class Protocol:
         
     # Documentation: https://pycryptodome.readthedocs.io/en/latest/src/examples.html
     def DecryptAndVerifyMessage(self, cipher_text, tag, nonce):
-
+        if self._key is None:
+            print("Decrypt: No key established.")
+            return cipher_text
         try:
             hmac = HMAC.new(self.hmac_key, digestmod=SHA256)
             tag = hmac.update(nonce + cipher_text).verify(tag)
