@@ -10,7 +10,7 @@ class Protocol:
     # TODO: MODIFY ARGUMENTS AND LOGIC AS YOU SEEM FIT
     # Generate g, p, and R_a/R_b
     # Nadia
-    def __init__(self):
+    def __init__(self, sharedKey):
         """
         Initializes the Protocol class with default values for g, p, and R.
 
@@ -20,7 +20,7 @@ class Protocol:
         - R (int): A nonce value used in the protocol.
         - hmac_key(bytes): key for MAC authentication tag
         """
-        self._key = None
+        self._key = sharedKey
         self.g = 5  # i am unsure about this value
         self.p = 23  # i am unsure about this value
         self.secret = random.randint(1, self.p - 1)
@@ -76,12 +76,9 @@ class Protocol:
                 self.R = random.randint(1, self.p - 1)
                 dh = pow(self.g, self.secret, self.p)
                 
-                encrypted = f"{R},{dh}"
-                self.EncryptAndProtectMessage(encrypted)
-                
-                clear = f"{self.R}"
-                self.phase += 1
-                return "Recieved initiation message"
+                encrypted = f"{R},{dh},{self.R}"
+                self.phase = 1
+                return encrypted
             elif self.phase == 1:
                 # Implement Diffie-Hellman key exchange
                 return "Recieved key exchange message"
