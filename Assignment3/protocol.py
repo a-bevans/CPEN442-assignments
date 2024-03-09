@@ -49,7 +49,7 @@ class Protocol:
     # Assume there is no message loss, so we can assume that the first message is the initiation message
     # Until the key is established, we can assume that all messages are part of the protocol
     def IsMessagePartOfProtocol(self, message):
-        if self.key == None:
+        if self.phase != 4:
             return True
         else:
             return False
@@ -63,24 +63,30 @@ class Protocol:
     # Client Phases:
     # 2: Decrypt g^b mod p, and self.R from server message. Verify R_self. Encrypt R_server and g^a mod p with the shared key and send it to the server
     #       Set key to g^ab mod p.
+        
+    # 4: Finished protocol
     # TODO: IMPLMENET THE LOGIC (CALL SetSessionKey ONCE YOU HAVE THE KEY ESTABLISHED)
     # THROW EXCEPTION IF AUTHENTICATION FAILS
-    def ProcessReceivedProtocolMessage(self, message):
+    def ProcessReceivedProtocolMessage(self, message, shared_secret):
         try:
             if self.phase == 0:
                 g, p, R = message.split(",")
                 self.g = int(g)
                 self.p = int(p)
                 self.R = random.randint(1, self.p - 1)
+                dh = pow(self.g, self.secret, self.p)
                 
+                encrypted = f"{R},{dh}"
+                self.EncryptAndProtectMessage(encrypted)
+                
+                clear = f"{self.R}"
                 self.phase += 1
                 return "Recieved initiation message"
-            if self.phase == 1:
+            elif self.phase == 1:
                 # Implement Diffie-Hellman key exchange
                 return "Recieved key exchange message"
-            if self.phase == 2:
+            elif self.phase == 2:
                 # Client phase 
-
             else:
                 return "Error: Authentication failed"
             
