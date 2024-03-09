@@ -10,7 +10,7 @@ class Protocol:
     # TODO: MODIFY ARGUMENTS AND LOGIC AS YOU SEEM FIT
     # Generate g, p, and R_a/R_b
     # Nadia
-    def __init__(self, sharedKey):
+    def __init__(self):
         """
         Initializes the Protocol class with default values for g, p, and R.
 
@@ -20,7 +20,7 @@ class Protocol:
         - R (int): A nonce value used in the protocol.
         - hmac_key(bytes): key for MAC authentication tag
         """
-        self._key = sharedKey
+        self._key = None
         self.g = 5  # i am unsure about this value
         self.p = 23  # i am unsure about this value
         self.secret = random.randint(1, self.p - 1)
@@ -31,7 +31,7 @@ class Protocol:
     # Creating the initial message of your protocol (to be send to the other party to bootstrap the protocol)
     # Nadia
     # TODO: IMPLEMENT THE LOGIC (MODIFY THE INPUT ARGUMENTS AS YOU SEEM FIT)
-    def GetProtocolInitiationMessage(self):
+    def GetProtocolInitiationMessage(self, shared_key):
         """
         Generates the protocol initiation message containing g, p, and R.
 
@@ -39,8 +39,10 @@ class Protocol:
         - str: A string containing g, p, and R separated by commas.
         """
         # Generate a random value R within the range (1, p-1) as the nonce
+        self._key = shared_key
         self.R = random.randint(1, self.p - 1)
         self.phase = 2
+        print(f"{self.g},{self.p},{self.R}")
         return f"{self.g},{self.p},{self.R}"
 
 
@@ -67,9 +69,10 @@ class Protocol:
     # 4: Finished protocol
     # TODO: IMPLMENET THE LOGIC (CALL SetSessionKey ONCE YOU HAVE THE KEY ESTABLISHED)
     # THROW EXCEPTION IF AUTHENTICATION FAILS
-    def ProcessReceivedProtocolMessage(self, message, shared_secret):
+    def ProcessReceivedProtocolMessage(self, message):
         try:
             if self.phase == 0:
+                print("Phase 0")
                 g, p, R = message.split(",")
                 self.g = int(g)
                 self.p = int(p)
@@ -82,6 +85,7 @@ class Protocol:
                 return encrypted
             
             elif self.phase == 1:
+                print("Phase 1")
                 R_server, dh_client = message.split(",")
                 dh_client = int(dh_client)
                 R_server = int(R_server)
@@ -91,6 +95,7 @@ class Protocol:
                 self.phase = 4
                 return "Protocol Finished"
             elif self.phase == 2:
+                print("Phase 2")
                 dh_server, R_client = message.split(",")
                 dh_server = int(dh_server)
                 R_client = int(R_client)
