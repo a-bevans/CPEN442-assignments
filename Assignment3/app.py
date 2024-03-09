@@ -181,7 +181,7 @@ class Assignment3VPN:
         self.secureButton["state"] = "disabled"
 
         # TODO: THIS IS WHERE YOU SHOULD IMPLEMENT THE START OF YOUR MUTUAL AUTHENTICATION AND KEY ESTABLISHMENT PROTOCOL, MODIFY AS YOU SEEM FIT
-        init_message = self.prtcl.GetProtocolInitiationMessage(self.sharedSecret)
+        init_message = self.prtcl.GetProtocolInitiationMessage(self.sharedSecret.get())
         self._SendMessage(init_message)
 
 

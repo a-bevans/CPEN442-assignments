@@ -43,6 +43,7 @@ class Protocol:
         self.R = random.randint(1, self.p - 1)
         self.phase = 2
         print(f"{self.g},{self.p},{self.R}")
+        print(self._key)
         return f"{self.g},{self.p},{self.R}"
 
 
@@ -65,7 +66,6 @@ class Protocol:
     # Client Phases:
     # 2: Decrypt g^b mod p, and self.R from server message. Verify R_self. Encrypt R_server and g^a mod p with the shared key and send it to the server
     #       Set key to g^ab mod p.
-        
     # 4: Finished protocol
     # TODO: IMPLMENET THE LOGIC (CALL SetSessionKey ONCE YOU HAVE THE KEY ESTABLISHED)
     # THROW EXCEPTION IF AUTHENTICATION FAILS
@@ -129,7 +129,8 @@ class Protocol:
 
     # Documentation: https://pycryptodome.readthedocs.io/en/latest/src/examples.html
     def EncryptAndProtectMessage(self, plain_text):
-
+        if self._key is None:
+            
         try:
             plain_text_bytes = plain_text.encode()
             cipher = AES.new(self._key, AES.MODE_CTR)
