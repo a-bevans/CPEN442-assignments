@@ -73,17 +73,32 @@ class Protocol:
                 g, p, R = message.split(",")
                 self.g = int(g)
                 self.p = int(p)
+                R = int(R)
                 self.R = random.randint(1, self.p - 1)
                 dh = pow(self.g, self.secret, self.p)
                 
                 encrypted = f"{R},{dh},{self.R}"
                 self.phase = 1
                 return encrypted
+            
             elif self.phase == 1:
-                # Implement Diffie-Hellman key exchange
-                return "Recieved key exchange message"
+                R_server, dh_client = message.split(",")
+                dh_client = int(dh_client)
+                R_server = int(R_server)
+                if R_server != self.R:
+                    raise ValueError
+                self.SetSessionKey(pow(dh_client, self.secret, self.p))
+                self.phase = 4
+                return "Protocol Finished"
             elif self.phase == 2:
-                # Client phase 
+                dh_server, R_client = message.split(",")
+                dh_server = int(dh_server)
+                R_client = int(R_client)
+                if R_client != self.R:
+                    raise ValueError
+                self.SetSessionKey(pow(dh_server, self.secret, self.p))
+                self.phase = 4
+                return "Protocol Finished"
             else:
                 return "Error: Authentication failed"
             
