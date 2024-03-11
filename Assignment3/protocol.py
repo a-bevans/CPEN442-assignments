@@ -14,7 +14,7 @@ class Protocol:
         """
         Initializes the Protocol class with default values for g, p, and R.
 
-        Attributes:
+        Args:
         - g (int): The generator value.
         - p (int): The prime modulus.
         - R (int): A nonce value used in the protocol.
@@ -49,6 +49,14 @@ class Protocol:
     # Assume there is no message loss, so we can assume that the first message is the initiation message
     # Until the key is established, we can assume that all messages are part of the protocol
     def IsMessagePartOfProtocol(self, message):
+        """
+        Checks if a given message is part of the protocol.
+
+        Args:
+        - message (str): The message to be checked.
+        Returns:
+        - bool: True if the message is part of the protocol, False otherwise.
+        """
         if self.key == None:
             return True
         else:
@@ -66,6 +74,15 @@ class Protocol:
     # TODO: IMPLMENET THE LOGIC (CALL SetSessionKey ONCE YOU HAVE THE KEY ESTABLISHED)
     # THROW EXCEPTION IF AUTHENTICATION FAILS
     def ProcessReceivedProtocolMessage(self, message):
+        """
+        Processes a received protocol message.
+        Args:
+            message (str): The received protocol message.
+        Returns:
+            str: The response message indicating the result of processing the received message.
+        Raises:
+            ValueError: If the received message is not in the expected format.
+        """
         try:
             if self.phase == 0:
                 g, p, R = message.split(",")
@@ -74,12 +91,13 @@ class Protocol:
                 self.R = random.randint(1, self.p - 1)
                 
                 self.phase += 1
-                return "Recieved initiation message"
+                return "Received initiation message"
             if self.phase == 1:
                 # Implement Diffie-Hellman key exchange
-                return "Recieved key exchange message"
+                return "Received key exchange message"
             if self.phase == 2:
                 # Client phase 
+                # Add your implementation here
 
             else:
                 return "Error: Authentication failed"
@@ -95,6 +113,11 @@ class Protocol:
     # Alex
     # TODO: MODIFY AS YOU SEEM FIT
     def SetSessionKey(self, key):
+        """
+        Sets the key for the current session.
+        Args:
+            key (bytes): The key to be set.
+        """
         self._key = key
         pass
 
@@ -106,6 +129,13 @@ class Protocol:
 
     # Documentation: https://pycryptodome.readthedocs.io/en/latest/src/examples.html
     def EncryptAndProtectMessage(self, plain_text):
+        """
+        Encrypts and protects a given message using the session key.
+        Args:
+            plain_text (str): The message to be encrypted.
+        Returns:
+            tuple: A tuple containing the cipher text, the HMAC tag, and the nonce.
+        """
 
         try:
             plain_text_bytes = plain_text.encode()
@@ -130,6 +160,17 @@ class Protocol:
         
     # Documentation: https://pycryptodome.readthedocs.io/en/latest/src/examples.html
     def DecryptAndVerifyMessage(self, cipher_text, tag, nonce):
+        """
+        Decrypts and verifies a given message using the session key.
+        Args:
+            cipher_text (str): The encrypted message to be decrypted.
+            tag (str): The HMAC tag.
+            nonce (str): The nonce used in the encryption.
+        Returns:
+            str: The decrypted message.
+        Raises:
+            ValueError: If the integrity verification or authentication fails.
+        """
 
         try:
             hmac = HMAC.new(self.hmac_key, digestmod=SHA256)
