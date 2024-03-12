@@ -149,8 +149,8 @@ class Assignment3VPN:
                 # Receiving all the data
                 message = self.conn.recv(4096)
                 tag = message[:32]                  # The first 32 bytes for the HMAC-SHA256 tag
-                nonce = message[32:48]              # The next 16 bytes for the nonce
-                cipher_text = message[48:]          # Everything else after the tag and nonce is the ciphertext
+                nonce = message[32:40]              # The next 16 bytes for the nonce
+                cipher_text = message[40:]          # Everything else after the tag and nonce is the ciphertext
                 print("Cipher:")
                 print(cipher_text)
                 print("Tag:")

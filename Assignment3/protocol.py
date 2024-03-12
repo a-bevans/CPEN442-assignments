@@ -1,4 +1,5 @@
 import random
+import sys
 
 from Crypto.Cipher import AES
 from Crypto.Hash import HMAC, SHA256
@@ -40,7 +41,8 @@ class Protocol:
         - str: A string containing g, p, and R separated by commas.
         """
         # Generate a random value R within the range (1, p-1) as the nonce
-        self._key = self.extendKey(self.shared_key)
+        
+        self.SetSessionKey(self.shared_key)
         self.R = random.randint(1, self.p - 1)
         self.phase = 2
         print(f"{self.g},{self.p},{self.R}")
@@ -74,7 +76,7 @@ class Protocol:
         try:
             if self.phase == 0:
                 print("Phase 0")
-                self._key = self.extendKey(self.shared_key)
+                self.SetSessionKey(self.shared_key)
                 message = self.DecryptAndVerifyMessage(message)
                 g, p, R = message.split(",")
                 self.g = int(g)
@@ -122,13 +124,7 @@ class Protocol:
     # Alex
     # TODO: MODIFY AS YOU SEEM FIT
     def SetSessionKey(self, key):
-        if not isinstance(key, str):
-            raise ValueError("Key must be a string.")
-         
-        # Check if the key is of the correct length (16 bytes for AES-128, 24 bytes for AES-192, 32 bytes for AES-256)
-        if len(key) not in [16, 24, 32]:
-            raise ValueError("Key must be either 16, 24, or 32 bytes long.")
-        self._key = key
+        self._key = self.extendKey(key)
         pass
 
 
@@ -142,15 +138,21 @@ class Protocol:
         if self._key is None:
             print("Encrypt: No key established.")
             plain_text = plain_text.encode()
-            return b'\x00' * 32 + b'\x00' * 16 + plain_text
+            return b'\x00' * 32 + b'\x00' * 8 + plain_text
         try:
             plain_text_bytes = plain_text.encode()
-            cipher = AES.new(self._key.encode(), AES.MODE_CTR)
+            print("plain_text:")
+            print(plain_text)
+            print("self.key:")
+            print(self._key)
+            cipher = AES.new(self._key, AES.MODE_CTR)
             cipher_text = cipher.encrypt(plain_text_bytes)
 
             hmac = HMAC.new(self.hmac_key, digestmod=SHA256)
             nonce = cipher.nonce
             tag = hmac.update(nonce + cipher_text).digest()
+            print(f"Nonce length: {len(nonce)} bytes")
+            print(f"Tag length: {len(tag)} bytes")
 
         except Exception as e:
             print("Error: Integrity verification or authentication failed.")
