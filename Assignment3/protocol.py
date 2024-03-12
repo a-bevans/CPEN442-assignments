@@ -32,7 +32,7 @@ class Protocol:
     # Creating the initial message of your protocol (to be send to the other party to bootstrap the protocol)
     # Nadia
     # TODO: IMPLEMENT THE LOGIC (MODIFY THE INPUT ARGUMENTS AS YOU SEEM FIT)
-    def GetProtocolInitiationMessage(self, shared_key):
+    def GetProtocolInitiationMessage(self):
         """
         Generates the protocol initiation message containing g, p, and R.
 
@@ -40,7 +40,7 @@ class Protocol:
         - str: A string containing g, p, and R separated by commas.
         """
         # Generate a random value R within the range (1, p-1) as the nonce
-        self._key = self.shared_key
+        self._key = self.extendKey(self.shared_key)
         self.R = random.randint(1, self.p - 1)
         self.phase = 2
         print(f"{self.g},{self.p},{self.R}")
@@ -53,7 +53,7 @@ class Protocol:
     # Assume there is no message loss, so we can assume that the first message is the initiation message
     # Until the key is established, we can assume that all messages are part of the protocol
     def IsMessagePartOfProtocol(self, message):
-        if self.phase != 4 and self._key != self.shared_key:
+        if self.phase != 4 and self._key != self.shared_key and self._key is not None:
             return True
         else:
             return False
@@ -74,7 +74,7 @@ class Protocol:
         try:
             if self.phase == 0:
                 print("Phase 0")
-                self._key = self.shared_key
+                self._key = self.extendKey(self.shared_key)
                 message = self.DecryptAndVerifyMessage(message)
                 g, p, R = message.split(",")
                 self.g = int(g)
@@ -182,9 +182,11 @@ class Protocol:
             return plain_text
 
 
-def extendKey(self, key):
-    if len(key) < 32:
-        key += key
-        return extendKey(key)
-    else:
-        return key[:32]
+    def extendKey(self, key):
+        print("Extending key:")
+        print(key)
+        h = SHA256.new(digest_size=16)
+        h.update(key.encode())
+        print(h.hexdigest())
+        return h.digest()
+    

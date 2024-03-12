@@ -87,7 +87,6 @@ class Assignment3VPN:
                 # enable the secure and send buttons
                 self.secureButton["state"] = "enable"
                 self.sendButton["state"] = "enable"
-                self.prtcl.shared_key = self.sharedSecret
         else:
             # Change button states
             self._ChangeConnectionMode(False)
@@ -107,6 +106,9 @@ class Assignment3VPN:
                 self.conn = self.s
                 self.receive_thread.start()
                 self._AppendLog("CLIENT: Connection established successfully. You can now send/receive messages.")
+                self.prtcl.shared_key = self.sharedSecret.get()
+                print("Shared key:")
+                print(self.prtcl.shared_key)
             else:
                 self._AppendLog("CONNECTION: Initiating server mode...")
                 self.s.bind((self.hostName.get(), int(self.port.get())))
@@ -126,6 +128,9 @@ class Assignment3VPN:
             self.conn, self.addr = self.s.accept()
             self._AppendLog("SERVER: Received connection from {}. You can now send/receive messages".format(self.addr))
             
+            self.prtcl.shared_key = self.sharedSecret.get()
+            print("Shared key:")
+            print(self.prtcl.shared_key)
             # Starting receiver thread
             self.receive_thread.start()
             
@@ -197,7 +202,7 @@ class Assignment3VPN:
         self.secureButton["state"] = "disabled"
 
         # TODO: THIS IS WHERE YOU SHOULD IMPLEMENT THE START OF YOUR MUTUAL AUTHENTICATION AND KEY ESTABLISHMENT PROTOCOL, MODIFY AS YOU SEEM FIT
-        init_message = self.prtcl.GetProtocolInitiationMessage(self.sharedSecret.get())
+        init_message = self.prtcl.GetProtocolInitiationMessage()
         self._SendMessage(init_message)
 
 
