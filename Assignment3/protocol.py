@@ -21,6 +21,7 @@ class Protocol:
         - hmac_key(bytes): key for MAC authentication tag
         """
         self._key = None
+        self.shared_key = None
         self.g = 5  # i am unsure about this value
         self.p = 23  # i am unsure about this value
         self.secret = random.randint(1, self.p - 1)
@@ -39,7 +40,7 @@ class Protocol:
         - str: A string containing g, p, and R separated by commas.
         """
         # Generate a random value R within the range (1, p-1) as the nonce
-        self._key = shared_key
+        self._key = self.shared_key
         self.R = random.randint(1, self.p - 1)
         self.phase = 2
         print(f"{self.g},{self.p},{self.R}")
@@ -52,7 +53,7 @@ class Protocol:
     # Assume there is no message loss, so we can assume that the first message is the initiation message
     # Until the key is established, we can assume that all messages are part of the protocol
     def IsMessagePartOfProtocol(self, message):
-        if self.phase != 4:
+        if self.phase != 4 and self._key != self.shared_key:
             return True
         else:
             return False
@@ -73,19 +74,21 @@ class Protocol:
         try:
             if self.phase == 0:
                 print("Phase 0")
+                self._key = self.shared_key
+                message = self.DecryptAndVerifyMessage(message)
                 g, p, R = message.split(",")
                 self.g = int(g)
                 self.p = int(p)
                 R = int(R)
                 self.R = random.randint(1, self.p - 1)
                 dh = pow(self.g, self.secret, self.p)
-                
                 encrypted = f"{R},{dh},{self.R}"
                 self.phase = 1
                 return encrypted
             
             elif self.phase == 1:
                 print("Phase 1")
+                message = self.DecryptAndVerifyMessage(message)
                 R_server, dh_client = message.split(",")
                 dh_client = int(dh_client)
                 R_server = int(R_server)
@@ -96,6 +99,7 @@ class Protocol:
                 return "Protocol Finished"
             elif self.phase == 2:
                 print("Phase 2")
+                message = self.DecryptAndVerifyMessage(message)
                 dh_server, R_client = message.split(",")
                 dh_server = int(dh_server)
                 R_client = int(R_client)
@@ -137,7 +141,7 @@ class Protocol:
     def EncryptAndProtectMessage(self, plain_text):
         if self._key is None:
             print("Encrypt: No key established.")
-            return plain_text
+            return plain_text.encode(), b'0', b'0'
         try:
             plain_text_bytes = plain_text.encode()
             cipher = AES.new(self._key.encode(), AES.MODE_CTR)
@@ -176,3 +180,11 @@ class Protocol:
             print("Error: Integrity verification or authentication failed.")
         else:
             return plain_text
+
+
+def extendKey(self, key):
+    if len(key) < 32:
+        key += key
+        return extendKey(key)
+    else:
+        return key[:32]

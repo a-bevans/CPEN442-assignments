@@ -87,6 +87,7 @@ class Assignment3VPN:
                 # enable the secure and send buttons
                 self.secureButton["state"] = "enable"
                 self.sendButton["state"] = "enable"
+                self.prtcl.shared_key = self.sharedSecret
         else:
             # Change button states
             self._ChangeConnectionMode(False)
@@ -144,6 +145,12 @@ class Assignment3VPN:
                 cipher_text = self.conn.recv(4096)
                 tag = self.conn.recv(4096)
                 nonce = self.conn.recv(4096)
+                print("Nonce:")
+                print(nonce)
+                print("Cipher text:")
+                print(cipher_text)
+                print("Tag:")
+                print(tag)
 
                 # Check if socket is still open
                 if cipher_text == None or len(cipher_text) == 0:
@@ -152,8 +159,6 @@ class Assignment3VPN:
 
                 # Checking if the received message is part of your protocol
                 # TODO: MODIFY THE INPUT ARGUMENTS AND LOGIC IF NECESSARY
-                plain_text = self.prtcl.DecryptAndVerifyMessage(cipher_text, tag, nonce)
-
                 if self.prtcl.IsMessagePartOfProtocol(cipher_text):
                     # Disabling the button to prevent repeated clicks
                     self.secureButton["state"] = "disabled"
@@ -163,6 +168,7 @@ class Assignment3VPN:
 
                 # Otherwise, decrypting and showing the messaage
                 else:
+                    plain_text = self.prtcl.DecryptAndVerifyMessage(cipher_text, tag, nonce)
                     self._AppendMessage("Other: {}".format(plain_text.decode()))
                     
             except Exception as e:
@@ -175,8 +181,14 @@ class Assignment3VPN:
         plain_text = message
         cipher_text, tag, nonce = self.prtcl.EncryptAndProtectMessage(plain_text)
         self.conn.send(cipher_text)
+        print("Cipher text:")
+        print(cipher_text)
         self.conn.send(tag)
+        print("Tag:")
+        print(tag)
         self.conn.send(nonce)
+        print("Nonce:")
+        print(nonce)
             
 
     # Secure connection with mutual authentication and key establishment
