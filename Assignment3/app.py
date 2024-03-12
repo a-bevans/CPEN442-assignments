@@ -147,8 +147,17 @@ class Assignment3VPN:
         while True:
             try:
                 # Receiving all the data
-                cipherTagNonce = self.conn.recv(4096)
-                cipher_text, tag, nonce = cipherTagNonce.split(",")
+                message = self.conn.recv(4096)
+                tag = message[:32]                  # The first 32 bytes for the HMAC-SHA256 tag
+                nonce = message[32:48]              # The next 16 bytes for the nonce
+                cipher_text = message[48:]          # Everything else after the tag and nonce is the ciphertext
+                print("Cipher:")
+                print(cipher_text)
+                print("Tag:")
+                print(tag)
+                print("Nonce:")
+                print(nonce)
+
 
                 # Check if socket is still open
                 if cipher_text == None or len(cipher_text) == 0:
@@ -177,11 +186,10 @@ class Assignment3VPN:
     # Send data to the other party
     def _SendMessage(self, message):
         plain_text = message
-        cipher_text, tag, nonce = self.prtcl.EncryptAndProtectMessage(plain_text)
-        cipherTagNonce = f"{cipher_text},{tag},{nonce}"
-        self.conn.send(cipherTagNonce)
+        message = self.prtcl.EncryptAndProtectMessage(plain_text)
+        self.conn.send(message)
         print("Cipher, tag, and nonce:")
-        print(cipherTagNonce)
+        print(message)
 
             
 

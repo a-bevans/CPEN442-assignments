@@ -141,7 +141,8 @@ class Protocol:
     def EncryptAndProtectMessage(self, plain_text):
         if self._key is None:
             print("Encrypt: No key established.")
-            return plain_text.encode(), b'0', b'0'
+            plain_text = plain_text.encode()
+            return b'\x00' * 32 + b'\x00' * 16 + plain_text
         try:
             plain_text_bytes = plain_text.encode()
             cipher = AES.new(self._key.encode(), AES.MODE_CTR)
@@ -155,7 +156,7 @@ class Protocol:
             print("Error: Integrity verification or authentication failed.")
 
         else:
-            return cipher_text, tag, nonce
+            return tag + nonce + cipher_text
 
 
     # Decrypting and verifying messages
@@ -185,8 +186,7 @@ class Protocol:
     def extendKey(self, key):
         print("Extending key:")
         print(key)
-        h = SHA256.new(digest_size=16)
+        h = SHA256.new()
         h.update(key.encode())
         print(h.hexdigest())
         return h.digest()
-    
