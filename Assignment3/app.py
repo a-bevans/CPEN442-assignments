@@ -142,6 +142,8 @@ class Assignment3VPN:
             try:
                 # Receiving all the data
                 cipher_text = self.conn.recv(4096)
+                tag = self.conn.recv(4096)
+                nonce = self.conn.recv(4096)
 
                 # Check if socket is still open
                 if cipher_text == None or len(cipher_text) == 0:
@@ -150,7 +152,7 @@ class Assignment3VPN:
 
                 # Checking if the received message is part of your protocol
                 # TODO: MODIFY THE INPUT ARGUMENTS AND LOGIC IF NECESSARY
-                plain_text = self.prtcl.DecryptAndVerifyMessage(cipher_text)
+                plain_text = self.prtcl.DecryptAndVerifyMessage(cipher_text, tag, nonce)
 
                 if self.prtcl.IsMessagePartOfProtocol(cipher_text):
                     # Disabling the button to prevent repeated clicks
@@ -171,8 +173,10 @@ class Assignment3VPN:
     # Send data to the other party
     def _SendMessage(self, message):
         plain_text = message
-        cipher_text = self.prtcl.EncryptAndProtectMessage(plain_text)
-        self.conn.send(cipher_text.encode())
+        cipher_text, tag, nonce = self.prtcl.EncryptAndProtectMessage(plain_text)
+        self.conn.send(cipher_text)
+        self.conn.send(tag)
+        self.conn.send(nonce)
             
 
     # Secure connection with mutual authentication and key establishment

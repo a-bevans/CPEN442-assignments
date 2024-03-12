@@ -142,7 +142,7 @@
             </child>
             <child>
               <object class="ttk.Entry" id="secretEntry">
-                <property name="text" translatable="yes">testKey</property>
+                <property name="text" translatable="yes">testKey012345678</property>
                 <property name="textvariable">string:sharedSecret</property>
                 <property name="width">31</property>
                 <layout manager="grid">

@@ -118,6 +118,12 @@ class Protocol:
     # Alex
     # TODO: MODIFY AS YOU SEEM FIT
     def SetSessionKey(self, key):
+        if not isinstance(key, str):
+            raise ValueError("Key must be a string.")
+         
+        # Check if the key is of the correct length (16 bytes for AES-128, 24 bytes for AES-192, 32 bytes for AES-256)
+        if len(key) not in [16, 24, 32]:
+            raise ValueError("Key must be either 16, 24, or 32 bytes long.")
         self._key = key
         pass
 
@@ -134,7 +140,7 @@ class Protocol:
             return plain_text
         try:
             plain_text_bytes = plain_text.encode()
-            cipher = AES.new(self._key, AES.MODE_CTR)
+            cipher = AES.new(self._key.encode(), AES.MODE_CTR)
             cipher_text = cipher.encrypt(plain_text_bytes)
 
             hmac = HMAC.new(self.hmac_key, digestmod=SHA256)
