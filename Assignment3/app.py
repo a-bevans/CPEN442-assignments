@@ -168,8 +168,8 @@ class Assignment3VPN:
                 # Checking if the received message is part of your protocol
                 # TODO: MODIFY THE INPUT ARGUMENTS AND LOGIC IF NECESSARY
                 print("Is this part of protocol? ")
-                print(self.prtcl.IsMessagePartOfProtocol(cipher_text))
-                if self.prtcl.IsMessagePartOfProtocol(cipher_text):
+                print(self.prtcl.IsMessagePartOfProtocol(tag))
+                if self.prtcl.IsMessagePartOfProtocol(tag):
                     # Disabling the button to prevent repeated clicks
                     self.secureButton["state"] = "disabled"
                     # Processing the protocol message
@@ -178,6 +178,7 @@ class Assignment3VPN:
 
                 # Otherwise, decrypting and showing the messaage
                 else:
+                    print("Non-Protocol Message")
                     plain_text = self.prtcl.DecryptAndVerifyMessage(cipher_text, tag, nonce)
                     self._AppendMessage("Other: {}".format(plain_text.decode()))
                     

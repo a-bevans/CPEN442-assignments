@@ -53,8 +53,8 @@ class Protocol:
     # Alex
     # Assume there is no message loss, so we can assume that the first message is the initiation message
     # Until the key is established, we can assume that all messages are part of the protocol
-    def IsMessagePartOfProtocol(self, message):
-        if self.phase != 4:
+    def IsMessagePartOfProtocol(self, tag):
+        if self.phase != 4 and tag != b'\x00' * 32:
             return True
         else:
             return False
