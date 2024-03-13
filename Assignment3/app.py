@@ -180,7 +180,7 @@ class Assignment3VPN:
                 else:
                     print("Non-Protocol Message")
                     plain_text = self.prtcl.DecryptAndVerifyMessage(cipher_text, tag, nonce)
-                    self._AppendMessage("Other: {}".format(plain_text.decode()))
+                    self._AppendMessage("Other: {}".format(plain_text))
                     
             except Exception as e:
                 self._AppendLog("RECEIVER_THREAD: Error receiving data: {}".format(str(e)))

@@ -26,9 +26,12 @@ class Protocol:
         self.g = 5  # i am unsure about this value
         self.p = 23  # i am unsure about this value
         self.secret = random.randint(1, self.p - 1)
-        self.R = None
+        print(f"Secret: {self.secret}")
+        self.R = random.randint(1, self.p - 1)
+        print(f"R: {self.R}")
         self.hmac_key = get_random_bytes(16)
         self.phase = 0
+        self.dh_recieved = None
 
     # Creating the initial message of your protocol (to be send to the other party to bootstrap the protocol)
     # Nadia
@@ -43,7 +46,6 @@ class Protocol:
         # Generate a random value R within the range (1, p-1) as the nonce
         
         self.SetSessionKey(self.shared_key)
-        self.R = random.randint(1, self.p - 1)
         self.phase = 2
         print(f"Sending init message: R: {self.R}, g: {self.g}, p: {self.p}")
         return f"{self.g},{self.p},{self.R}"
@@ -54,7 +56,7 @@ class Protocol:
     # Assume there is no message loss, so we can assume that the first message is the initiation message
     # Until the key is established, we can assume that all messages are part of the protocol
     def IsMessagePartOfProtocol(self, tag):
-        if self.phase != 4 and tag != b'\x00' * 32:
+        if tag != b'\x00' * 32 and self.phase != 5:
             return True
         else:
             return False
@@ -82,7 +84,6 @@ class Protocol:
                 self.p = int(p)
                 R = int(R)
                 print(f"Recieved init message: R: {R}, g: {self.g}, p: {self.p}")
-                self.R = random.randint(1, self.p - 1)
                 dh = pow(self.g, self.secret, self.p)
                 encrypted = f"{R},{dh},{self.R}"
                 self.phase = 1
@@ -93,34 +94,43 @@ class Protocol:
             elif self.phase == 1:
                 print("Phase 1")
                 message = self.DecryptAndVerifyMessage(message, tag, nonce)
-                R_server, dh_client = message.split(",")
-                dh_client = int(dh_client)
-                R_server = int(R_server)
-                if R_server != self.R:
+                R_test, dh_client = message.split(",")
+                self.dh_recieved = int(dh_client)
+                R_test = int(R_test)
+                if R_test != self.R:
                     raise ValueError
-                self.SetSessionKey(pow(dh_client, self.secret, self.p))
                 self.phase = 4
                 return "Protocol Finished"
+            
             elif self.phase == 2:
                 print("Phase 2")
                 message = self.DecryptAndVerifyMessage(message, tag, nonce)
-                dh_server, R_client = message.split(",")
-                dh_server = int(dh_server)
+                print(f"Decrypted message: {message}")
+                R_test, dh_server, R_client = message.split(",")
+                R_test = int(R_test)
+                self.dh_recieved = int(dh_server)
                 R_client = int(R_client)
-                print(f"Recieved phase 2 message: R: {R_client}, g^a mod p: {dh_server}")
-                if R_client != self.R:
+                #print(f"Recieved phase 2 message: R: {R_client}, g^a mod p: {dh_server}")
+                if R_test != self.R:
+                    print("Error: R_self does not match")
                     raise ValueError
-                self.SetSessionKey(pow(dh_server, self.secret, self.p))
+                message = f"{R_client},{pow(self.g, self.secret, self.p)}"
+                print(f"Sending phase 2 message: R: {R_client}, g^a mod p: {pow(self.g, self.secret, self.p)}")
                 self.phase = 4
+                return message
+            elif self.phase == 4:
+                print("Phase 4")
+                self.SetSessionKey(f"{pow(self.dh_recieved, self.secret, self.p)}")
+                self.phase = 5
                 return "Protocol Finished"
             else:
                 return "Error: Authentication failed"
             
 
         except ValueError:
-            print("Error: Integrity verification or authentication failed.")
+            print("ProcessError: Integrity verification or authentication failed.")
         else:
-            return plain_text
+            return message
 
 
     # Setting the key for the current session
@@ -128,6 +138,7 @@ class Protocol:
     # TODO: MODIFY AS YOU SEEM FIT
     def SetSessionKey(self, key):
         self._key = self.extendKey(key)
+        print(f"Session key set: {self._key}")
 
 
     # Encrypting messages
@@ -152,7 +163,7 @@ class Protocol:
             tag = hmac.update(nonce + cipher_text).digest()
 
         except Exception as e:
-            print("Error: Integrity verification or authentication failed.")
+            print("EncodeError: Integrity verification or authentication failed.")
 
         else:
             return tag + nonce + cipher_text
@@ -171,7 +182,8 @@ class Protocol:
             return cipher_text
         try:
             hmac = HMAC.new(self.shared_key.encode(), digestmod=SHA256)
-            tag = hmac.update(nonce + cipher_text).verify(tag)
+            hmac.update(nonce + cipher_text)
+            hmac.verify(tag)
             print("Tag verified")
 
             cipher = AES.new(self._key, AES.MODE_CTR, nonce=nonce)
@@ -180,8 +192,8 @@ class Protocol:
             plain_text = message.decode()
             print(f"Decrypted message: {plain_text}")
 
-        except ValueError:
-            print("Error: Integrity verification or authentication failed.")
+        except Exception as e:
+            print("DecodeError: Integrity verification or authentication failed.")
         else:
             return plain_text
 
