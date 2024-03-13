@@ -149,8 +149,9 @@ class Assignment3VPN:
                 # Receiving all the data
                 message = self.conn.recv(4096)
                 tag = message[:32]                  # The first 32 bytes for the HMAC-SHA256 tag
-                nonce = message[32:40]              # The next 16 bytes for the nonce
+                nonce = message[32:40]              # The next 8 bytes for the nonce
                 cipher_text = message[40:]          # Everything else after the tag and nonce is the ciphertext
+                print("Received message!")
                 print("Cipher:")
                 print(cipher_text)
                 print("Tag:")
@@ -166,12 +167,14 @@ class Assignment3VPN:
 
                 # Checking if the received message is part of your protocol
                 # TODO: MODIFY THE INPUT ARGUMENTS AND LOGIC IF NECESSARY
+                print("Is this part of protocol? ")
+                print(self.prtcl.IsMessagePartOfProtocol(cipher_text))
                 if self.prtcl.IsMessagePartOfProtocol(cipher_text):
                     # Disabling the button to prevent repeated clicks
                     self.secureButton["state"] = "disabled"
                     # Processing the protocol message
-                    return_message = self.prtcl.ProcessReceivedProtocolMessage(cipher_text)
-                    self._SendMessage(self, return_message)
+                    return_message = self.prtcl.ProcessReceivedProtocolMessage(cipher_text, tag, nonce)
+                    self._SendMessage(return_message)
 
                 # Otherwise, decrypting and showing the messaage
                 else:
@@ -187,9 +190,8 @@ class Assignment3VPN:
     def _SendMessage(self, message):
         plain_text = message
         message = self.prtcl.EncryptAndProtectMessage(plain_text)
+        print("Sending Message!")
         self.conn.send(message)
-        print("Cipher, tag, and nonce:")
-        print(message)
 
             
 

@@ -45,8 +45,7 @@ class Protocol:
         self.SetSessionKey(self.shared_key)
         self.R = random.randint(1, self.p - 1)
         self.phase = 2
-        print(f"{self.g},{self.p},{self.R}")
-        print(self._key)
+        print(f"Sending init message: R: {self.R}, g: {self.g}, p: {self.p}")
         return f"{self.g},{self.p},{self.R}"
 
 
@@ -55,7 +54,7 @@ class Protocol:
     # Assume there is no message loss, so we can assume that the first message is the initiation message
     # Until the key is established, we can assume that all messages are part of the protocol
     def IsMessagePartOfProtocol(self, message):
-        if self.phase != 4 and self._key != self.shared_key and self._key is not None:
+        if self.phase != 4:
             return True
         else:
             return False
@@ -72,25 +71,28 @@ class Protocol:
     # 4: Finished protocol
     # TODO: IMPLMENET THE LOGIC (CALL SetSessionKey ONCE YOU HAVE THE KEY ESTABLISHED)
     # THROW EXCEPTION IF AUTHENTICATION FAILS
-    def ProcessReceivedProtocolMessage(self, message):
+    def ProcessReceivedProtocolMessage(self, message, tag, nonce):
         try:
             if self.phase == 0:
                 print("Phase 0")
                 self.SetSessionKey(self.shared_key)
-                message = self.DecryptAndVerifyMessage(message)
+                message = self.DecryptAndVerifyMessage(message, tag, nonce)
                 g, p, R = message.split(",")
                 self.g = int(g)
                 self.p = int(p)
                 R = int(R)
+                print(f"Recieved init message: R: {R}, g: {self.g}, p: {self.p}")
                 self.R = random.randint(1, self.p - 1)
                 dh = pow(self.g, self.secret, self.p)
                 encrypted = f"{R},{dh},{self.R}"
                 self.phase = 1
+                print("Phase 0 Message:")
+                print(encrypted)
                 return encrypted
             
             elif self.phase == 1:
                 print("Phase 1")
-                message = self.DecryptAndVerifyMessage(message)
+                message = self.DecryptAndVerifyMessage(message, tag, nonce)
                 R_server, dh_client = message.split(",")
                 dh_client = int(dh_client)
                 R_server = int(R_server)
@@ -101,10 +103,11 @@ class Protocol:
                 return "Protocol Finished"
             elif self.phase == 2:
                 print("Phase 2")
-                message = self.DecryptAndVerifyMessage(message)
+                message = self.DecryptAndVerifyMessage(message, tag, nonce)
                 dh_server, R_client = message.split(",")
                 dh_server = int(dh_server)
                 R_client = int(R_client)
+                print(f"Recieved phase 2 message: R: {R_client}, g^a mod p: {dh_server}")
                 if R_client != self.R:
                     raise ValueError
                 self.SetSessionKey(pow(dh_server, self.secret, self.p))
@@ -125,7 +128,6 @@ class Protocol:
     # TODO: MODIFY AS YOU SEEM FIT
     def SetSessionKey(self, key):
         self._key = self.extendKey(key)
-        pass
 
 
     # Encrypting messages
@@ -135,24 +137,19 @@ class Protocol:
 
     # Documentation: https://pycryptodome.readthedocs.io/en/latest/src/examples.html
     def EncryptAndProtectMessage(self, plain_text):
+        print("Encrypting and protecting message:")
         if self._key is None:
             print("Encrypt: No key established.")
             plain_text = plain_text.encode()
             return b'\x00' * 32 + b'\x00' * 8 + plain_text
         try:
             plain_text_bytes = plain_text.encode()
-            print("plain_text:")
-            print(plain_text)
-            print("self.key:")
-            print(self._key)
             cipher = AES.new(self._key, AES.MODE_CTR)
             cipher_text = cipher.encrypt(plain_text_bytes)
 
-            hmac = HMAC.new(self.hmac_key, digestmod=SHA256)
+            hmac = HMAC.new(self.shared_key.encode(), digestmod=SHA256)
             nonce = cipher.nonce
             tag = hmac.update(nonce + cipher_text).digest()
-            print(f"Nonce length: {len(nonce)} bytes")
-            print(f"Tag length: {len(tag)} bytes")
 
         except Exception as e:
             print("Error: Integrity verification or authentication failed.")
@@ -168,16 +165,20 @@ class Protocol:
         
     # Documentation: https://pycryptodome.readthedocs.io/en/latest/src/examples.html
     def DecryptAndVerifyMessage(self, cipher_text, tag, nonce):
+        print("Decrypting and verifying message:")
         if self._key is None:
             print("Decrypt: No key established.")
             return cipher_text
         try:
-            hmac = HMAC.new(self.hmac_key, digestmod=SHA256)
+            hmac = HMAC.new(self.shared_key.encode(), digestmod=SHA256)
             tag = hmac.update(nonce + cipher_text).verify(tag)
+            print("Tag verified")
 
             cipher = AES.new(self._key, AES.MODE_CTR, nonce=nonce)
             message = cipher.decrypt(cipher_text)
+            print("Message decrypted")
             plain_text = message.decode()
+            print(f"Decrypted message: {plain_text}")
 
         except ValueError:
             print("Error: Integrity verification or authentication failed.")
@@ -186,9 +187,6 @@ class Protocol:
 
 
     def extendKey(self, key):
-        print("Extending key:")
-        print(key)
         h = SHA256.new()
         h.update(key.encode())
-        print(h.hexdigest())
         return h.digest()
