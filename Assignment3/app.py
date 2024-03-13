@@ -147,15 +147,8 @@ class Assignment3VPN:
         while True:
             try:
                 # Receiving all the data
-                cipher_text = self.conn.recv(4096)
-                tag = self.conn.recv(4096)
-                nonce = self.conn.recv(4096)
-                print("Nonce:")
-                print(nonce)
-                print("Cipher text:")
-                print(cipher_text)
-                print("Tag:")
-                print(tag)
+                cipherTagNonce = self.conn.recv(4096)
+                cipher_text, tag, nonce = cipherTagNonce.split(",")
 
                 # Check if socket is still open
                 if cipher_text == None or len(cipher_text) == 0:
@@ -185,15 +178,11 @@ class Assignment3VPN:
     def _SendMessage(self, message):
         plain_text = message
         cipher_text, tag, nonce = self.prtcl.EncryptAndProtectMessage(plain_text)
-        self.conn.send(cipher_text)
-        print("Cipher text:")
-        print(cipher_text)
-        self.conn.send(tag)
-        print("Tag:")
-        print(tag)
-        self.conn.send(nonce)
-        print("Nonce:")
-        print(nonce)
+        cipherTagNonce = f"{cipher_text},{tag},{nonce}"
+        self.conn.send(cipherTagNonce)
+        print("Cipher, tag, and nonce:")
+        print(cipherTagNonce)
+
             
 
     # Secure connection with mutual authentication and key establishment
