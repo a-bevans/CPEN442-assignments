@@ -197,7 +197,7 @@ class Protocol:
         print("Decrypting and verifying message:")
         if self._key is None:
             print("Decrypt: No key established.")
-            return cipher_text
+            return cipher_text.decode()
         try:
             hmac = HMAC.new(self.shared_key.encode(), digestmod=SHA256)
             hmac.update(nonce + cipher_text)
