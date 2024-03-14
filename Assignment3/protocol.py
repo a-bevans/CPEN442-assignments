@@ -51,9 +51,8 @@ class Protocol:
 
     def IsMessagePartOfProtocol(self, tag):
         """
-        Checking if a received message is part of the protocol (called from app.py).
-        Assume there is no message loss, so we can assume that the first message is the initiation message.
-        Until the key is established, we can assume that all messages are part of the protocol
+        Checking if a received message is part of the protocol by seeing if the tag is the set buffer value or
+        the protocol is finished (called from app.py).
         Returns:
         - True if the message is part of the protocol.
         - False if the message is not part of the protocol.
