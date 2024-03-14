@@ -73,7 +73,9 @@ class Protocol:
         Client Phases:
             2: Decrypt g^b mod p, and self.R from server message. Verify R_self. Encrypt R_server and g^a mod p with the shared key and send it to the server
             Set key to g^ab mod p.
-            4: Finished protocol
+        Shared Phases:
+            4: Set the new session key
+            5: Protocol Finished
         Returns:
         - the response message to be sent back to the other party.
         """
