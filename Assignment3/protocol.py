@@ -7,24 +7,25 @@ from Crypto.Random import get_random_bytes
 
 class Protocol:
     
-    # Initializer (Called from app.py)
-    # TODO: MODIFY ARGUMENTS AND LOGIC AS YOU SEEM FIT
-    # Generate g, p, and R_a/R_b
-    # Nadia
     def __init__(self):
         """
         Initializes the Protocol class with default values for g, p, and R.
+        Generates a random secret value for the Diffie-Hellman key exchange.
 
         Attributes:
-        - g (int): The generator value.
-        - p (int): The prime modulus.
-        - R (int): A nonce value used in the protocol.
-        - hmac_key(bytes): key for MAC authentication tag
+        - g (int): The base value for the Diffie-Hellman key exchange.
+        - p (int): The prime modulus for the Diffie-Hellman key exchange.
+        - R (int): The random value used as a nonce in the protocol.
+        - secret (int): The secret value used in the Diffie-Hellman key exchange.
+        - shared_key (str): The shared key used to encrypt and decrypt messages.
+        - phase (int): The phase of the protocol.
+        - dh_recieved (int): The value received from the other party in the Diffie-Hellman key exchange.
+        - hmac_key (str): The key used to generate HMACs for message integrity.
         """
         self._key = None
         self.shared_key = None
-        self.g = 5  # i am unsure about this value
-        self.p = 23  # i am unsure about this value
+        self.g = 5  
+        self.p = 23  
         self.secret = random.randint(1, self.p - 1)
         print(f"Secret: {self.secret}")
         self.R = random.randint(1, self.p - 1)
@@ -33,15 +34,12 @@ class Protocol:
         self.phase = 0
         self.dh_recieved = None
 
-    # Creating the initial message of your protocol (to be send to the other party to bootstrap the protocol)
-    # Nadia
-    # TODO: IMPLEMENT THE LOGIC (MODIFY THE INPUT ARGUMENTS AS YOU SEEM FIT)
+
     def GetProtocolInitiationMessage(self):
         """
-        Generates the protocol initiation message containing g, p, and R.
-
+        Creating the initial message of your protocol (to be send to the other party to bootstrap the protocol)
         Returns:
-        - str: A string containing g, p, and R separated by commas.
+        - the initial message of the protocol.
         """
         # Generate a random value R within the range (1, p-1) as the nonce
         
@@ -51,29 +49,34 @@ class Protocol:
         return f"{self.g},{self.p},{self.R}"
 
 
-    # Checking if a received message is part of your protocol (called from app.py)
-    # Alex
-    # Assume there is no message loss, so we can assume that the first message is the initiation message
-    # Until the key is established, we can assume that all messages are part of the protocol
     def IsMessagePartOfProtocol(self, tag):
+        """
+        Checking if a received message is part of the protocol (called from app.py).
+        Assume there is no message loss, so we can assume that the first message is the initiation message.
+        Until the key is established, we can assume that all messages are part of the protocol
+        Returns:
+        - True if the message is part of the protocol.
+        - False if the message is not part of the protocol.
+        """
         if tag != b'\x00' * 32 and self.phase != 5:
             return True
         else:
             return False
 
 
-    # Processing protocol message
-    # Alex
-    # Server Phases: 
-    # 0: Recieved init from client. Encrypt R_client and g^b mod p with the shared key and self.R in the clear and send it to the client
-    # 1: Decrypt self.R, g^a mod p from client message. Verify self.R. Calculate g^ab mod p and set to key
-    # Client Phases:
-    # 2: Decrypt g^b mod p, and self.R from server message. Verify R_self. Encrypt R_server and g^a mod p with the shared key and send it to the server
-    #       Set key to g^ab mod p.
-    # 4: Finished protocol
-    # TODO: IMPLMENET THE LOGIC (CALL SetSessionKey ONCE YOU HAVE THE KEY ESTABLISHED)
-    # THROW EXCEPTION IF AUTHENTICATION FAILS
     def ProcessReceivedProtocolMessage(self, message, tag, nonce):
+        """
+        Processing a received message as part of the protocol.
+        Server Phases: 
+            0: Received init from client. Encrypt R_client and g^b mod p with the shared key and self.R in the clear and send it to the client
+            1: Decrypt self.R, g^a mod p from client message. Verify self.R. Calculate g^ab mod p and set to key
+        Client Phases:
+            2: Decrypt g^b mod p, and self.R from server message. Verify R_self. Encrypt R_server and g^a mod p with the shared key and send it to the server
+            Set key to g^ab mod p.
+            4: Finished protocol
+        Returns:
+        - the response message to be sent back to the other party.
+        """
         try:
             if self.phase == 0:
                 print("Phase 0")
@@ -83,7 +86,7 @@ class Protocol:
                 self.g = int(g)
                 self.p = int(p)
                 R = int(R)
-                print(f"Recieved init message: R: {R}, g: {self.g}, p: {self.p}")
+                print(f"Received init message: R: {R}, g: {self.g}, p: {self.p}")
                 dh = pow(self.g, self.secret, self.p)
                 encrypted = f"{R},{dh},{self.R}"
                 self.phase = 1
@@ -133,21 +136,28 @@ class Protocol:
             return message
 
 
-    # Setting the key for the current session
-    # Alex
-    # TODO: MODIFY AS YOU SEEM FIT
     def SetSessionKey(self, key):
+        """
+        Sets the key for the current session.
+        Args:
+        - key (str): The key to be used for the current session.
+        """
         self._key = self.extendKey(key)
         print(f"Session key set: {self._key}")
 
 
-    # Encrypting messages
-    # Claris
-    # IMPLEMENT ENCRYPTION WITH THE SESSION KEY (ALSO INCLUDE ANY NECESSARY INFO IN THE ENCRYPTED MESSAGE FOR INTEGRITY PROTECTION)
-    # RETURN AN ERROR MESSAGE IF INTEGRITY VERITIFCATION OR AUTHENTICATION FAILS
-
-    # Documentation: https://pycryptodome.readthedocs.io/en/latest/src/examples.html
     def EncryptAndProtectMessage(self, plain_text):
+        """
+        Encrypts and protects a message using the session key.
+        Implements encryption with the session key and includes necessary info in the encrypted message for integrity protection.
+        Documentation: https://pycryptodome.readthedocs.io/en/latest/src/examples.html
+        Args:
+        - plain_text (str): The message to be encrypted and protected.
+        Throws:
+        - EncodeError: If integrity verification or authentication fails.
+        Returns:
+        - the encrypted and protected message.  
+        """
         print("Encrypting and protecting message:")
         if self._key is None:
             print("Encrypt: No key established.")
@@ -169,13 +179,21 @@ class Protocol:
             return tag + nonce + cipher_text
 
 
-    # Decrypting and verifying messages
-    # Claris
-    # IMPLEMENT DECRYPTION AND INTEGRITY CHECK WITH THE SESSION KEY
-    # RETURN AN ERROR MESSAGE IF INTEGRITY VERITIFCATION OR AUTHENTICATION FAILS
-        
-    # Documentation: https://pycryptodome.readthedocs.io/en/latest/src/examples.html
     def DecryptAndVerifyMessage(self, cipher_text, tag, nonce):
+        """
+        Decrypts and verifies a message using the session key.
+        Implements decryption with the session key and includes necessary info in the encrypted message for integrity protection.
+        Returns an error message if integrity verification or authentication fails.
+        Documentation: https://pycryptodome.readthedocs.io/en/latest/src/examples.html
+        Args:
+        - cipher_text (str): The message to be decrypted and verified.
+        - tag (str): The tag used to verify the integrity of the message.
+        - nonce (str): The nonce used to decrypt the message.
+        Throws:
+        - DecodeError: If integrity verification or authentication fails.
+        Returns:
+        - the decrypted and verified message.
+        """
         print("Decrypting and verifying message:")
         if self._key is None:
             print("Decrypt: No key established.")
@@ -199,6 +217,13 @@ class Protocol:
 
 
     def extendKey(self, key):
+        """
+        Extends the key to the required length.
+        Args:
+        - key (str): The key to be extended.
+        Returns:
+        - the extended key.
+        """
         h = SHA256.new()
         h.update(key.encode())
         return h.digest()
